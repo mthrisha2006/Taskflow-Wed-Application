@@ -1,0 +1,190 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    font-family: Arial, sans-serif;
+    background: #eef2ff;
+    margin: 0;
+    padding: 40px 15px;
+}
+.container {
+    width: 100%;
+    max-width: 500px;
+    margin: auto;
+    padding: 30px 20px;
+    background: white;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 15px #ccd;
+}
+h1 {
+    color: #3730a3;
+}
+form {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+button {
+    padding: 12px;
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.message {
+    color: #166534;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 480px) {
+    body {
+        padding: 20px 10px;
+    }
+    .container {
+        padding: 20px 15px;
+    }
+    form {
+        flex-direction: column;
+    }
+    input,
+    button {
+        width: 100%;
+    }
+}
+#taskList {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+}
+#taskList li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f3f4f6;
+    border-radius: 8px;
+}
+#taskList li span {
+    flex: 1;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+#taskList li button {
+    padding: 10px 12px;
+}
+/* Authentication Section */
+#authSection {
+    max-width: 500px;
+    margin: 30px auto;
+    padding: 25px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+#authSection h2 {
+    text-align: center;
+    color: #3730a3;
+    margin-top: 0;
+}
+#authSection form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+#authSection h3 {
+    margin-bottom: 4px;
+}
+#authSection input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+#authSection button {
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background: #5145e5;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+#authSection button:hover {
+    background: #3730a3;
+}
+#authMessage {
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+    #authSection {
+        width: calc(100% - 24px);
+        margin: 24px auto;
+        padding: 18px;
+    }
+}
+/* Fix Register, Login and Logout buttons */
+#authSection form button {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 16px;
+    background: #5145e5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+#authSection #registerForm button,
+#authSection #logoutButton {
+    width: auto;
+    min-width: 100px;
+    align-self: flex-start;
+}
+#authSection hr {
+    width: 100%;
+    margin: 16px 0;
+    border: 0;
+    border-top: 1px solid #ccc;
+}
+#authSection #logoutButton {
+    margin-top: 10px;
+}
+#authSection #registerForm button[type="submit"] {
+    display: block;
+    width: 100%;
+    min-height: 42px;
+    padding: 12px;
+    background-color: #5145e5;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+/* Home and About button spacing */
+nav {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+nav button,
+nav a {
+    margin-bottom: 0;
+    border-radius: 8px;
+}

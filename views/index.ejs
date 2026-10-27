@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>TaskFlow</h1>
+    <p>Manage your daily tasks easily.</p>
+    <!-- Account Section -->
+    <section id="authSection">
+        <h2>Account Login</h2>
+        <form id="registerForm">
+            <h3>Create Account</h3>
+            <input type="email" id="registerEmail"
+                   placeholder="Email address" required>
+            <input type="password" id="registerPassword"
+                   placeholder="Password (minimum 8 characters)"
+                   minlength="8" required>
+                   <p id="passwordStrength"></p>
+            <button type="submit">Register</button>
+        </form>
+        <hr>
+        <form id="loginForm">
+            <h3>Login</h3>
+            <input type="email" id="loginEmail"
+                   placeholder="Email address" required>
+            <input type="password" id="loginPassword"
+                   placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <button type="button" id="logoutButton">Logout</button>
+        <p id="authMessage" role="status"></p>
+    </section>
+    <!-- Navigation -->
+    <nav>
+        <button type="button" onclick="showPage('home')">Home</button>
+        <button type="button" onclick="showPage('about')">About</button>
+    </nav>
+    <!-- Home Page -->
+    <section id="home">
+        <h2>Task Management</h2>
+        <form id="taskForm">
+            <input type="text" id="taskInput"
+                   placeholder="Enter task name (minimum 3 characters)"
+                   minlength="3" required>
+            <button type="submit">Add Task</button>
+        </form>
+        <p id="message" role="status"></p>
+        <ul id="taskList"></ul>
+    </section>
+    <!-- About Page -->
+    <section id="about" style="display:none">
+        <h2>About TaskFlow</h2>
+        <p>TaskFlow helps users manage their daily tasks.</p>
+    </section>
+</div>
+<script>
+const form = document.getElementById("taskForm");
+const input = document.getElementById("taskInput");
+const list = document.getElementById("taskList");
+const message = document.getElementById("message");
+const authMessage = document.getElementById("authMessage");
+let loggedIn = false;
+// Display messages
+function showMessage(element, text) {
+    element.textContent = text || "";
+}
+// Register
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("registerEmail").value.trim();
+    const password = document.getElementById("registerPassword").value;
+    if (password.length < 8) {
+        showMessage(authMessage, "Password must be at least 8 characters.");
+        return;
+    }
+    try {
+        const res = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        showMessage(authMessage, data.message || data.error);
+        if (res.ok) {
+            document.getElementById("registerForm").reset();
+            await checkLogin();
+        }
+    } catch (error) {
+        console.error(error);
+        showMessage(authMessage, "Unable to connect to server.");
+    }
+});
+// Login
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    try {
+        const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        showMessage(authMessage, data.message || data.error);
+        if (res.ok) {
+            document.getElementById("loginForm").reset();
+            await checkLogin();
+        }
+    } catch (error) {
+        console.error(error);
+        showMessage(authMessage, "Unable to connect to server.");
+    }
+});
+// Check login status
+async function checkLogin() {
+    try {
+        const res = await fetch("/api/me", {
+            credentials: "same-origin"
+        });
+        if (!res.ok) {
+            loggedIn = false;
+            list.replaceChildren();
+            showMessage(message, "Please login to manage tasks.");
+            return;
+        }
+        const data = await res.json();
+        loggedIn = true;
+        showMessage(authMessage, "Logged in as " + data.email);
+        await loadTasks();
+    } catch (error) {
+        console.error("Login check failed:", error);
+        loggedIn = false;
+        list.replaceChildren();
+        showMessage(authMessage, "Unable to check login status.");
+    }
+}
+// Logout
+document.getElementById("logoutButton").addEventListener("click", async () => {
+    try {
+        const res = await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        if (res.ok) {
+            loggedIn = false;
+            list.replaceChildren();
+            showMessage(message, "Please login to manage tasks.");
+        }
+        showMessage(authMessage, data.message || data.error);
+    } catch (error) {
+        console.error(error);
+        showMessage(authMessage, "Unable to connect to server.");
+    }
+});
+// Load tasks belonging to logged-in user
+async function loadTasks() {
+    list.replaceChildren();
+    if (!loggedIn) return;
+    try {
+        const response = await fetch("/api/tasks", {
+            credentials: "same-origin"
+        });
+        const tasks = await response.json();
+        console.log("Tasks received from server:", tasks);
+        if (!response.ok || !Array.isArray(tasks)) {
+            showMessage(message, tasks.error || "Unable to load tasks.");
+            return;
+        }
+        if (tasks.length === 0) {
+            list.innerHTML = "<li>No tasks yet. Add a task!</li>";
+            return;
+        }
+        tasks.forEach(task => {
+            const li = document.createElement("li");
+            const taskName = document.createElement("span");
+            taskName.textContent = task.name || "Unnamed task";
+            // Edit button
+            const editButton = document.createElement("button");
+            editButton.type = "button";
+            editButton.textContent = "Edit";
+            editButton.addEventListener("click", async () => {
+                const newName = prompt("Enter updated task name:", task.name);
+                if (newName === null) return;
+                if (newName.trim().length < 3) {
+                    alert("Task must contain at least 3 characters.");
+                    return;
+                }
+                try {
+                    const res = await fetch("/api/tasks/" + task.id, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        credentials: "same-origin",
+                        body: JSON.stringify({ name: newName.trim() })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || "Unable to update task.");
+                        return;
+                    }
+                    await loadTasks();
+                } catch (error) {
+                    console.error(error);
+                    alert("Unable to connect to server.");
+                }
+            });
+            // Delete button
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.textContent = "Delete";
+            deleteButton.addEventListener("click", async () => {
+                if (!confirm("Are you sure you want to delete this task?")) {
+                    return;
+                }
+                try {
+                    const res = await fetch("/api/tasks/" + task.id, {
+                        method: "DELETE",
+                        credentials: "same-origin"
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                        alert(data.error || "Unable to delete task.");
+                        return;
+                    }
+                    await loadTasks();
+                } catch (error) {
+                    console.error(error);
+                    alert("Unable to connect to server.");
+                }
+            });
+            li.append(taskName, editButton, deleteButton);
+            list.appendChild(li);
+        });
+        showMessage(message, "Tasks loaded successfully.");
+    } catch (error) {
+        console.error("Task loading error:", error);
+        showMessage(message, "Unable to load tasks.");
+    }
+}
+// Add task
+form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!loggedIn) {
+        showMessage(message, "Please login before adding tasks.");
+        return;
+    }
+    const name = input.value.trim();
+    if (name.length < 3) {
+        showMessage(message, "Task must contain at least 3 characters.");
+        return;
+    }
+    try {
+        const response = await fetch("/api/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ name })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            showMessage(message, data.error || "Unable to add task.");
+            return;
+        }
+        input.value = "";
+        showMessage(message, "Task added successfully!");
+        await loadTasks();
+    } catch (error) {
+        console.error("Add task error:", error);
+        showMessage(message, "Unable to connect to server.");
+    }
+});
+// Home and About navigation
+function showPage(page) {
+    const selectedPage = page === "about" ? "about" : "home";
+    document.getElementById("home").style.display =
+        selectedPage === "home" ? "block" : "none";
+    document.getElementById("about").style.display =
+        selectedPage === "about" ? "block" : "none";
+    if (location.hash !== "#" + selectedPage) {
+        location.hash = selectedPage;
+    }
+}
+function loadPage() {
+    const page = location.hash.replace("#", "");
+    showPage(page === "about" ? "about" : "home");
+}
+window.addEventListener("hashchange", loadPage);
+// Initial page setup
+loadPage();
+checkLogin();
+const registerPassword = document.getElementById("registerPassword");
+const passwordStrength = document.getElementById("passwordStrength");
+
+if (registerPassword && passwordStrength) {
+    registerPassword.addEventListener("input", () => {
+        const password = registerPassword.value;
+
+        if (password.length < 8) {
+            passwordStrength.textContent =
+                "Weak: Minimum 8 characters required";
+        } else if (
+            !/[A-Z]/.test(password) ||
+            !/[a-z]/.test(password) ||
+            !/[0-9]/.test(password) ||
+            !/[^A-Za-z0-9]/.test(password)
+        ) {
+            passwordStrength.textContent =
+                "Medium: Include uppercase, lowercase, number and symbol";
+        } else {
+            passwordStrength.textContent = "Strong password!";
+        }
+    });
+}
+</script>
+</body>
+</html>
